@@ -10,14 +10,14 @@
 
     <q-drawer v-model="leftDrawerOpen" show-if-above bordered>
       <q-list>
-        <q-item-label header>Essential Links</q-item-label>
+        <q-item-label header>Izbornik</q-item-label>
         <EssentialLink v-for="link in linksList" :key="link.title" v-bind="link" />
       </q-list>
     </q-drawer>
 
-  <q-page-container>
-  <router-view :key="$route.fullPath" />
-  </q-page-container>
+    <q-page-container>
+      <router-view :key="$route.fullPath" />
+    </q-page-container>
   </q-layout>
 </template>
 
@@ -49,6 +49,12 @@ const linksList = [
     caption: 'Pretraži knjige po nazivu ili autoru',
     icon: 'search',
     link: '/pretrazivanje',
+  },
+  {
+    title: 'Unos nove knjige',
+    caption: 'Dodaj novu knjigu u knjižnicu',
+    icon: 'add_box',
+    link: '/unosknjige',
   },
   {
     title: 'Lokacija',
