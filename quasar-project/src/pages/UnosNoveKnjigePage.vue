@@ -124,17 +124,32 @@ const opis = ref('')
 const slika = ref(null)
 const status = ref('Slobodna')
 
-function spremiKnjigu() {
-  knjige.value.push({
-    id: id.value,
-    naslov: naslov.value,
-    autor: autor.value,
-    opis: opis.value,
-    slika: slika.value,
-    status: status.value
-  })
-  id.value++
-  odustani()
+async function spremiKnjigu() {
+  const formData = new FormData()
+  formData.append('naslov', naslov.value)
+  formData.append('autor', autor.value)
+  formData.append('opis', opis.value)
+  formData.append('status', status.value)
+  if (slika.value) {
+    const file = Array.isArray(slika.value) ? slika.value[0] : slika.value
+    formData.append('slika', file)
+  }
+
+  try {
+    const response = await fetch('http://localhost:3000/api/knjiga', {
+      method: 'POST',
+      body: formData
+    })
+
+    if (!response.ok) throw new Error('Greška pri dodavanju knjige')
+
+    const data = await response.json()
+    knjige.value.push(data)
+    id.value++
+    odustani()
+  } catch (error) {
+    console.error(error)
+  }
 }
 
 function odustani() {

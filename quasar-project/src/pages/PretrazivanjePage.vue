@@ -2,6 +2,7 @@
   <q-page class="q-pa-md">
 
     <div class="q-gutter-md">
+
       <q-input
         v-model="searchQuery"
         label="Unesi pojam za pretraživanje"
@@ -21,6 +22,7 @@
         color="primary"
         @click="searchBooks"
       />
+
     </div>
 
     <q-table
@@ -29,75 +31,30 @@
       row-key="id"
       flat
       bordered
-      class="q-mt-md"
+      class="q-mt-md bg-white shadow-2 rounded-borders"
       :pagination="{ rowsPerPage: 5 }"
+      wrap-cells
     >
       <template v-slot:body-cell-slika="props">
         <q-td :props="props">
-          <img :src="props.row.slika" alt="slika knjige" style="height: 100px;">
+          <q-img
+            :src="props.row.slika"
+            alt="slika knjige"
+            style="width: 60px; height: 90px; object-fit: cover; border-radius: 4px;"
+          />
         </q-td>
       </template>
     </q-table>
+
   </q-page>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 
-const rows = ref([
-  {
-    id: 1,
-    naslov: 'Raskrižje gavranova',
-    autor: 'Andrzej Sapkowski',
-    opis: 'Fantastični roman iz poznatog Witcher serijala.',
-    slika: 'https://m.media-amazon.com/images/I/81rcURiyM2L._AC_UF1000,1000_QL80_.jpg'
-  },
-  {
-    id: 2,
-    naslov: 'Gospodar prstenova: Prstenova družina',
-    autor: 'J.R.R. Tolkien',
-    opis: 'Prvi dio epske trilogije o borbi protiv Saurona.',
-    slika: 'https://upload.wikimedia.org/wikipedia/en/8/8e/The_Fellowship_of_the_Ring_cover.gif'
-  },
-  {
-    id: 3,
-    naslov: 'The Name of the Wind',
-    autor: 'Patrick Rothfuss',
-    opis: 'Priča o Kvotheu, talentiranom mladom čarobnjaku i glazbeniku.',
-    slika: 'https://m.media-amazon.com/images/S/compressed.photo.goodreads.com/books/1704917687i/186074.jpg'
-  },
-  {
-    id: 4,
-    naslov: 'Mistborn: The Final Empire',
-    autor: 'Brandon Sanderson',
-    opis: 'Prvi dio Mistborn serijala, epska fantazija o pobuni protiv tiranskog vladara.',
-    slika: 'https://m.media-amazon.com/images/I/811qBmIYTFL._AC_UF1000,1000_QL80_.jpg'
-  },
-  {
-    id: 5,
-    naslov: 'The Lies of Locke Lamora',
-    autor: 'Scott Lynch',
-    opis: 'Priča o genijalnom lopovu i njegovoj bandi u fantastičnom gradu Camorr.',
-    slika: 'https://www.menartshop.hr/wp-content/uploads/2025/04/b595b1b1-9cdb-4245-8a4a-fbc0ca9fda6b.png'
-  },
-  {
-    id: 6,
-    naslov: 'Eragon',
-    autor: 'Christopher Paolini',
-    opis: 'Prva knjiga iz Inheritance Cycle serijala, avantura mladog jahača zmaja.',
-    slika: 'https://upload.wikimedia.org/wikipedia/en/c/ce/Eragon_book_cover.png'
-  },
-  {
-    id: 7,
-    naslov: 'The Hobbit',
-    autor: 'J.R.R. Tolkien',
-    opis: 'Avanture Bilba Bagginsa i putovanje kroz Srednju Zemlju.',
-    slika: 'https://m.media-amazon.com/images/I/71jD4jMityL._AC_UF1000,1000_QL80_.jpg'
-  }
-])
-
+const rows = ref([])
+const filteredBooks = ref([])
 const searchQuery = ref('')
-
 const searchBy = ref('naslov')
 
 const searchOptions = [
@@ -106,43 +63,73 @@ const searchOptions = [
 ]
 
 const columns = [
-  { 
-    name: 'id', 
-    label: 'ID', 
-    field: 'id', 
-    align: 'left' 
+  {
+    name: 'id',
+    label: 'ID',
+    field: 'id',
+    align: 'left',
+    style: { width: '50px' }
   },
-  { 
-    name: 'slika', 
-    label: 'Slika', 
-    field: 'slika', 
-    align: 'left' 
+  {
+    name: 'slika',
+    label: 'Slika',
+    field: 'slika',
+    align: 'center',
+    style: { width: '70px' }
   },
-  { 
-    name: 'naslov', 
-    label: 'Naslov', 
-    field: 'naslov', 
-    align: 'left' 
+  {
+    name: 'naslov',
+    label: 'Naslov',
+    field: 'naslov',
+    align: 'left',
+    style: { width: '180px', wordBreak: 'break-word' }
   },
-  { 
-    name: 'autor', 
-    label: 'Autor', 
-    field: 'autor', 
-    align: 'left' 
+  {
+    name: 'autor',
+    label: 'Autor',
+    field: 'autor',
+    align: 'left',
+    style: { width: '140px', wordBreak: 'break-word' }
   }
 ]
 
-const filteredBooks = ref([...rows.value])
+async function loadBooks() {
+  try {
+    const response = await fetch('http://localhost:3000/api/knjiga')
+
+    if (!response.ok) {
+      throw new Error('Greška u mrežnom zahtjevu')
+    }
+
+    const data = await response.json()
+    rows.value = data
+    filteredBooks.value = [...rows.value]
+
+  } catch (error) {
+    console.error('Greška pri dohvaćanju knjiga:', error)
+  }
+}
 
 function searchBooks() {
   const query = searchQuery.value.toLowerCase()
+
   if (!query) {
     filteredBooks.value = [...rows.value]
     return
   }
 
-  filteredBooks.value = rows.value.filter(book => {
-    return book[searchBy.value].toLowerCase().includes(query)
-  })
+  filteredBooks.value = rows.value.filter(book =>
+    book[searchBy.value].toLowerCase().includes(query)
+  )
 }
+
+onMounted(() => {
+  loadBooks()
+})
 </script>
+
+<style scoped>
+.q-table {
+  border-radius: 12px;
+}
+</style>
